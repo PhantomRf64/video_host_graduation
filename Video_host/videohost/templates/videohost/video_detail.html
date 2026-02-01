@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+
+{% block title %} Video{% endblock title %} 
+
+
+{% block content %}
+    
+
+<h2>{{ video.title }}</h2>
+
+<video controls preload="auto" width="640">
+    <source src="{{ video.video.url }}" type="video/mp4">
+    Ваш браузер не поддерживает видео
+</video>
+
+<button id ="btn_like" type="like">like</button>
+<div id="likes"></div>
+
+{% if video.description %}
+<p>{{ video.description }}</p>
+{% endif %}
+
+<a href="{% url 'main' %}">← Назад</a>
+
+<script>
+const btn = document.getElementById("btn_like");
+
+btn.addEventListener("click", function () {
+  fetch("{% url 'api_likes' video.id %}", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": "{{ csrf_token }}"
+    }
+  });
+});
+
+setInterval(() => {
+  fetch("{% url 'api_likes' video.id %}")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('likes').innerHTML =
+        `<p>${data.count_likes}</p>`;
+    });
+}, 1000);
+</script>
+
+{% endblock content %}

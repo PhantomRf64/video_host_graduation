@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+
+{% block title %} List Video{% endblock title %} 
+
+
+{% block content %}
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="ADD"/>
+</form>
+<div>
+    {% for i in list_video %}
+        <div>
+        <h4>{{ i.title }}</h4>
+            <a href="{% url 'video_detail' i.pk %}">
+                {% if i.preview %}
+                    <img src="{{ i.preview.url }}" width="200">
+                {% else %}
+                    <img src="/static/default_preview.png" width="200">
+                {% endif %}
+            </a>
+        </div>
+        {% empty %}
+        <p> ups </p>
+    {% endfor %}
+
+</div>
+{% endblock content %}
