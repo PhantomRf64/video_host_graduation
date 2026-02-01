@@ -1,8 +1,27 @@
-Django
-psycopg2
-Pillow
-djangorestframework
-django-environ
-django-cors-headers
-django-filter
-djangorestframework-simplejwt
+# Django framework
+Django==5.3
+
+# PostgreSQL driver
+psycopg2-binary==2.9.9
+
+# Работа с изображениями
+Pillow==10.1.0
+
+# REST API
+djangorestframework==3.15.0
+
+# JWT аутентификация для DRF
+djangorestframework-simplejwt==6.2.1
+
+# Фильтры для API запросов
+django-filter==23.2
+
+# Работа с конфигами через .env
+django-environ==0.11.0
+
+# CORS заголовки (для фронтенда)
+django-cors-headers==4.4.0
+
+# Утилиты для разработки
+django-extensions==4.4.0
+ipython==8.15.0
