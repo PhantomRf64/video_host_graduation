@@ -1,38 +1,66 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
+from django.contrib import messages
+from .forms import Registration_Form, Login_Form  # формы должны быть корректны
+from django.conf import settings
 
-from . import forms, models
 
-def welcome(request): 
-    if request.method == "POST":
-        logout(request)
-    elif request.user.is_authenticated:
-        return redirect("main")
+def welcome(request):
+    if request.user.is_authenticated:
+        return redirect("wellcome") 
     return render(request, "Registration/index.html")
 
+
+
 def register(request):
+    if request.user.is_authenticated:
+        print (12)
+        return redirect("main")
+
     if request.method == "POST":
-        f = forms.Registration_Form(data=request.POST)
-        if f.is_valid():
-            user = f.save()
+        form = Registration_Form(request.POST, request.FILES)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data["password1"]) 
+            user.save()
             login(request, user)
+            messages.success(request, f"Добро пожаловать, {user.username}!")
+            print (1)
             return redirect("main")
-            
-    form = forms.Registration_Form()
-    return render(request, "Registration/registr.html", {"form" : form , "isLogin":False})
-    
+        else:
+            messages.error(request, "Ошибка регистрации. Проверьте данные.")
+    else:
+        form = Registration_Form()
+
+    return render(request, "Registration/registr.html", {"form": form, "isLogin": False})
+
+
 
 def sign_in(request):
+    if request.user.is_authenticated:
+        return redirect("main")
+
     if request.method == "POST":
-        f = forms.Login_Form(data=request.POST)
-        if f.is_valid():
-            username = f.cleaned_data["username"]
-            password = f.cleaned_data["password"]
+        form = Login_Form(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data["username"]
+            password = form.cleaned_data["password"]
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
+                messages.success(request, f"Вы вошли как {user.username}")
                 return redirect("main")
+            else:
+                messages.error(request, "Неверный логин или пароль")
+    else:
+        form = Login_Form()
 
-    form = forms.Login_Form()
-    return render(request, "Registration/registr.html", {"form":form, "isLogin":True})
+    return render(request, "Registration/registr.html", {"form": form, "isLogin": True})
 
+
+
+def sign_out(request):
+    if request.user.is_authenticated:
+        logout(request)
+        messages.success(request, "Вы вышли из системы")
+    return redirect("welcome")

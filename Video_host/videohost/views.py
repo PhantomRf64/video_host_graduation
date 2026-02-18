@@ -1,77 +1,122 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import CraateVideo_Form
-from .models import VideoItem
-from django.http import JsonResponse
-from .serializers import SubmetInfoSerializer
+from django.contrib.auth.decorators import login_required
+from .models import VideoItem, Like, Dislike, View, Comment
+from .forms import CreateVideo_Form
+from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from .serializers import SubmetInfoSerializer
+from rest_framework.permissions import IsAuthenticated
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import VideoItem
+from .forms import CreateVideo_Form  
+from django.contrib.auth.decorators import login_required
 
 def main_page(request):
-    if request.method == "POST":
-        form = CraateVideo_Form(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('main')  
-    else:
-        form = CraateVideo_Form()
+    videos = VideoItem.objects.all().order_by('-created_at')
+    return render(request, "videohost/index.html", {"list_video": videos})
 
-    videos = VideoItem.objects.all()
-    return render(request, "videohost/index.html", {
-        "form": form,
-        "list_video": videos
-    })
+@login_required
+def upload_video(request):
+    if request.method == "POST":
+        form = CreateVideo_Form(request.POST, request.FILES)
+        if form.is_valid():
+            video = form.save(commit=False)
+            video.author = request.user  
+            video.save()
+            return redirect('main')
+    else:
+        form = CreateVideo_Form()
+
+    return render(request, "videohost/upload_video.html", {"form": form})
 
 
 def video_detail(request, pk):
+    
     video = get_object_or_404(VideoItem, pk=pk)
     user = request.user
-    if user.is_authenticated:
-        if user not in video.views.all():
-            video.views.add(user)
 
-    return render(
-        request,
-        "videohost/video_detail.html", {
+    
+    if user.is_authenticated:
+        View.objects.get_or_create(user=user, video=video)
+
+    return render(request, "videohost/video_detail.html", {
         "video": video
     })
 
 
-@api_view(["GET","POST"])
-def api_likes(request, pk):
-    video = get_object_or_404(VideoItem, pk=pk)
-
-    if request.method == "POST":
-        user = request.user
-        if not user.is_authenticated:
-            return Response({"status" : False},status=403)
-        
-        action = request.data.get("action")
-
-        if action == "like":
-            video.dislikes.remove(user)
-            if user in video.likes.all():
-                video.likes.remove(user)
-            else:
-                video.likes.add(user)
-
-        elif action == "dislike":
-            video.likes.remove(user)
-            if user in video.dislikes.all():
-                video.dislikes.remove(user) 
-            else:
-                video.dislikes.add(user) 
-    else:
-        return Response(
-                {"status": False, "error": "Invalid action"},
-                status=400
-            )
-
-
-    serializer = SubmetInfoSerializer(video,context={"request": request })
-    return Response(serializer.data)  
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def api_reaction(request, pk):
     
+    
+    video = get_object_or_404(VideoItem, pk=pk)
+    user = request.user
+    action = request.data.get("action")
+
+    if action == "like":
+        
+        Dislike.objects.filter(user=user, video=video).delete()
+        
+        like, created = Like.objects.get_or_create(user=user, video=video)
+        if not created:
+            like.delete()
+
+    elif action == "dislike":
+        
+        
+        Like.objects.filter(user=user, video=video).delete()
+        
+        dislike, created = Dislike.objects.get_or_create(user=user, video=video)
+        if not created:
+            dislike.delete()
+    else:
+        return Response({"status": False, "error": "Invalid action"}, status=400)
+    
+    video.refresh_from_db()
+
+    serializer = SubmetInfoSerializer(video, context={"request": request})
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def api_comments(request, pk):
+    
+    video = get_object_or_404(VideoItem, pk=pk)
+    text = request.data.get("text")
+    
+
+    if not text:
+        return Response({"status": False, "error": "Empty comment"}, status=400)
+
+    comment = Comment.objects.create(author=request.user, video=video, text=text)
+
+    return Response({
+        "status": True,
+        "author": comment.author.username,
+        "text": comment.text,
+        "created_at": comment.created_at.strftime("%d %b %Y %H:%M")
+    })
+
+
+@api_view(["GET"])
+def api_views(request, pk):
+    
+    video = get_object_or_404(VideoItem, pk=pk)
+    count = video.views.count()
+    return Response({"views": count})
+
+
+
+
+
+
+
+
+
+
                            
 
 
@@ -80,16 +125,3 @@ def api_likes(request, pk):
 
 
 
-
-    #         if user in video.likes.all():
-    #             video.likes.remove(user)
-    #             liked = False
-    #         else:
-    #             video.likes.add(user)
-    #             liked = True
-    #         video.save()
-    #     else:
-    #         return Response({"status": False, "error": "Anonymous"}, status=403)
-
-    # serializer = SubmetInfoSerializer(video, context={'request': request})
-    # return Response(serializer.data)

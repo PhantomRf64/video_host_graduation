@@ -24,11 +24,15 @@ from . import views
 
 
 
+from django.urls import path
+from . import views
+
 urlpatterns = [
-    path('main/',views.main_page,name="main"),
-    path('main/video_detail/<int:pk>',views.video_detail,name='video_detail'),
-    path('main/video_detail/api_likes/<int:pk>',views.api_likes,name='api_likes'),
-   
+    path('', views.main_page, name='main'),  
+    path('upload/', views.upload_video, name='upload_video'),  
+    path('video/<int:pk>/', views.video_detail, name='video_detail'), 
+    path('api_reaction/<int:pk>/', views.api_reaction, name='api_reaction'),
+    path('api_comments/<int:pk>/', views.api_comments, name='api_comments'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
