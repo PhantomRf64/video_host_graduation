@@ -1,15 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{{ video.title }}{% endblock title %}
+{% block title %}{{ video.title }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-
     <div class="row">
-        <!-- Основная колонка видео -->
+        
         <div class="col-lg-8">
-
-            <!-- Видео плеер -->
             <div class="ratio ratio-16x9 mb-3 shadow-lg rounded video-wrapper">
                 <video id="video_player" controls class="w-100 rounded">
                     <source src="{{ video.video.url }}" type="video/mp4">
@@ -17,7 +14,7 @@
                 </video>
             </div>
 
-            <!-- Информация о видео -->
+            
             <div class="p-4 rounded mb-3 video-info shadow-sm">
                 <h4 class="mb-2 text-light">{{ video.title }}</h4>
                 <p class="mb-1 text-light">
@@ -25,21 +22,21 @@
                     Загружено: {{ video.created_at|date:"d M Y" }}
                 </p>
                 <p class="mb-1 text-light">
-                    Просмотры: <strong>{{ video.views.count }}</strong>
+                    Просмотры: <strong id="views_count">{{ video.views.count }}</strong>
                 </p>
 
-                <!-- Лайки и дизлайки -->
+                
                 <div class="d-flex align-items-center mt-2">
-                    <button id="likeBtn" class="btn btn-like me-2">
+                    <button id="likeBtn" class="btn btn-like me-2" {% if not user.is_authenticated %}disabled{% endif %}>
                         👍 <span id="likes" class="like-count">{{ video.likes.count }}</span>
                     </button>
-                    <button id="dislikeBtn" class="btn btn-dislike">
+                    <button id="dislikeBtn" class="btn btn-dislike" {% if not user.is_authenticated %}disabled{% endif %}>
                         👎 <span id="dislikes" class="dislike-count">{{ video.dislikes.count }}</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Комментарии -->
+            
             <div class="comments p-3 rounded video-info shadow-sm">
                 <h5 class="mb-3 text-light">Комментарии</h5>
                 <div id="comments" class="mb-3">
@@ -50,187 +47,196 @@
                     {% endfor %}
                 </div>
 
-                <!-- Форма комментария -->
                 <form id="comment_form">
                     {% csrf_token %}
-                    <textarea id="comment_text" class="form-control mb-2" placeholder="Написать комментарий" required></textarea>
-                    <button type="submit" class="btn btn-success">Отправить</button>
+                    <textarea id="comment_text" class="form-control mb-2" placeholder="Написать комментарий" required {% if not user.is_authenticated %}disabled{% endif %}></textarea>
+                    <button type="submit" class="btn btn-success" {% if not user.is_authenticated %}disabled{% endif %}>Отправить</button>
                 </form>
             </div>
-
         </div>
 
-        <!-- Боковая колонка: похожие видео -->
-        <div class="col-lg-4">
-            <h6 class="mb-3 text-light">Похожие видео</h6>
-            {% for vid in list_video %}
-            {% if vid.id != video.id %}
-            <a href="{% url 'video_detail' vid.id %}" class="text-decoration-none">
-                <div class="d-flex mb-3 sidebar-video p-2 rounded">
-                    {% if vid.preview %}
-                    <img src="{{ vid.preview.url }}" class="me-2 rounded" style="width:120px; height:70px; object-fit:cover;">
-                    {% endif %}
-                    <div>
-                        <h6 class="mb-0 text-light">{{ vid.title|truncatechars:40 }}</h6>
-                        <p class="text-muted mb-0" style="font-size:0.8rem;">{{ vid.views.count }} просмотров</p>
-                    </div>
+        
+       <div class="col-lg-4">
+    <h6 class="mb-3 text-light">Похожие видео</h6>
+    {% for vid in list_video|slice:":5" %}
+        {% if vid.id != video.id %}
+        <a href="{% url 'video_detail' vid.id %}" class="text-decoration-none">
+            <div class="d-flex mb-3 sidebar-video p-2 rounded">
+                {% if vid.preview %}
+                <img src="{{ vid.preview.url }}" class="me-2 rounded" style="width:120px; height:70px; object-fit:cover;">
+                {% else %}
+                <div class="me-2 rounded" style="width:120px; height:70px; background-color:#2a3a50;"></div>
+                {% endif %}
+                <div>
+                    <h6 class="mb-0 text-light">{{ vid.title|truncatechars:40 }}</h6>
+                    <p class="text-muted mb-0" style="font-size:0.8rem;">
+                        {{ vid.views.count }} просмотров
+                    </p>
                 </div>
-            </a>
-            {% endif %}
-            {% endfor %}
-        </div>
-    </div>
+            </div>
+        </a>
+        {% endif %}
+    {% empty %}
+        <p class="text-light">Похожие видео пока отсутствуют.</p>
+    {% endfor %}
 </div>
 
-<!-- JS для лайков и комментариев -->
 <script>
+const video_view = document.getElementById("video_player");
 const likeBtn = document.getElementById("likeBtn");
 const dislikeBtn = document.getElementById("dislikeBtn");
 const commentForm = document.getElementById("comment_form");
 
 const reactionUrl = "{% url 'api_reaction' video.id %}";
+const commentsUrl = "{% url 'api_comments' video.id %}";
+const viewsUrl = "{% url 'api_views' video.id %}";
 
-// Лайк
-likeBtn.addEventListener("click", function () {
-    fetch(reactionUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({ action: "like" })
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById('likes').innerText = data.count_likes;
-        document.getElementById('dislikes').innerText = data.count_dislikes;
-        likeBtn.classList.add("glow-like");
-        setTimeout(() => likeBtn.classList.remove("glow-like"), 300);
-    });
+
+let viewSent = false;
+video_view.addEventListener("timeupdate", function() {
+    if (!video_view.duration || video_view.paused) return;
+
+    const percent = (video_view.currentTime / video_view.duration) * 100;
+
+    if (percent >= 35 && !viewSent) {
+        viewSent = true;
+
+        fetch(viewsUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ watched_percent: percent })
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("view counted", data);
+            document.getElementById("views_count").innerText = data.views;
+        });
+    }
 });
 
-// Дизлайк
-dislikeBtn.addEventListener("click", function () {
-    fetch(reactionUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({ action: "dislike" })
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById('dislikes').innerText = data.count_dislikes;
-        document.getElementById('likes').innerText = data.count_likes;
-        dislikeBtn.classList.add("glow-dislike");
-        setTimeout(() => dislikeBtn.classList.remove("glow-dislike"), 300);
-    });
-});
 
-// Комментарии
-commentForm.addEventListener("submit", function(e) {
-    e.preventDefault();
-    const text = document.getElementById("comment_text").value;
-
-    fetch("{% url 'api_comments' video.id %}", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({ text: text })
-    })
-    .then(res => res.json())
-    .then(data => {
-        const div = document.getElementById("comments");
-        const p = document.createElement("p");
-        p.className = "mb-1 text-light";
-        p.innerHTML = `<strong>${data.author}:</strong> ${data.text}`;
-        div.appendChild(p);
-        document.getElementById("comment_text").value = "";
+if (likeBtn) {
+    likeBtn.addEventListener("click", function() {
+        fetch(reactionUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ action: "like" })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("likes").innerText = data.count_likes;
+            document.getElementById("dislikes").innerText = data.count_dislikes;
+        });
     });
-});
+}
+
+if (dislikeBtn) {
+    dislikeBtn.addEventListener("click", function() {
+        fetch(reactionUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ action: "dislike" })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("likes").innerText = data.count_likes;
+            document.getElementById("dislikes").innerText = data.count_dislikes;
+        });
+    });
+}
+
+
+if (commentForm) {
+    commentForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const text = document.getElementById("comment_text").value;
+
+        fetch(commentsUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ text: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const div = document.getElementById("comments");
+            const p = document.createElement("p");
+            p.className = "mb-1 text-light";
+            p.innerHTML = `<strong>${data.author}:</strong> ${data.text}`;
+            div.appendChild(p);
+            document.getElementById("comment_text").value = "";
+        });
+    });
+}
 </script>
 
 <style>
-/* Темный "туманный" фон */
 body {
     background: linear-gradient(to bottom, #0b1524, #0d1b2a);
     color: #e0e0e0;
     font-family: "Segoe UI", sans-serif;
 }
 
-/* Карточки видео и комментариев */
 .video-info, .comments {
     background: rgba(20, 30, 50, 0.9);
     padding: 20px;
     margin-bottom: 20px;
     border-radius: 12px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    color: #fff;
 }
 
-/* Видео плеер с тенью */
 .video-wrapper {
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
     border-radius: 12px;
 }
 
-/* Похожие видео */
 .sidebar-video {
     background: rgba(15, 25, 45, 0.6);
     transition: all 0.3s ease;
+    color: #fff;
 }
 
 .sidebar-video:hover {
     background: rgba(30, 45, 70, 0.8);
     transform: translateX(5px);
 }
+.sidebar-video {
+    background: rgba(15, 25, 45, 0.6);
+    transition: all 0.3s ease;
+}
+.sidebar-video:hover {
+    background: rgba(30, 45, 70, 0.8);
+    transform: translateX(5px);
+}
 
-/* Кнопки лайка/дизлайка */
 .btn-like, .btn-dislike {
     transition: all 0.2s ease;
     color: #fff;
     font-weight: bold;
 }
 
-/* Glow эффекты */
-.glow-like {
-    box-shadow: 0 0 15px #00ffcc, 0 0 30px #00ffcc55;
-    transform: scale(1.2);
-    transition: all 0.3s ease;
-}
-
-.glow-dislike {
-    box-shadow: 0 0 15px #ff4c4c, 0 0 30px #ff4c4c55;
-    transform: scale(1.2);
-    transition: all 0.3s ease;
-}
-
-/* Лайки/дизлайки цифры */
-.like-count, .dislike-count {
-    margin-left: 5px;
-    font-weight: bold;
-    color: #00ffff; /* для лайка */
-}
-
-.dislike-count {
-    color: #ff6b6b; /* для дизлайка */
-}
-
-/* Комментарии */
-#comments p {
-    color: #dcdcdc;
-}
+.like-count { color: #00ffff; }
+.dislike-count { color: #ff6b6b; }
+#text-muted  p {color: #fff;}
+#comments p { color: #dcdcdc; }
 
 #comment_text {
     background-color: rgba(30, 40, 60, 0.85);
     color: #fff;
     border: none;
 }
-
-#comment_text::placeholder {
-    color: #a0a0a0;
-}
+#comment_text::placeholder { color: #a0a0a0; }
 </style>
 {% endblock content %}

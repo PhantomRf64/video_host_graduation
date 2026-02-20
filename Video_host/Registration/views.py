@@ -49,7 +49,8 @@ def sign_in(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f"Вы вошли как {user.username}")
-                return redirect("main")
+                next_url = request.GET.get("next")
+                return redirect(next_url if next_url else "main")
             else:
                 messages.error(request, "Неверный логин или пароль")
     else:
@@ -60,7 +61,6 @@ def sign_in(request):
 
 
 def sign_out(request):
-    if request.user.is_authenticated:
-        logout(request)
-        messages.success(request, "Вы вышли из системы")
-    return redirect("welcome")
+    logout(request)
+    messages.success(request, "Вы вышли из системы")
+    return redirect('wellcome')

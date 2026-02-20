@@ -122,3 +122,5 @@ STATIC_URL = 'static/'
 MEDIA_URL = "/media/"
 
 AUTH_USER_MODEL = "Registration.MyUser"
+
+LOGIN_URL = 'login'

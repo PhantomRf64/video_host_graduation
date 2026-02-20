@@ -25,6 +25,7 @@ def upload_video(request):
             video = form.save(commit=False)
             video.author = request.user  
             video.save()
+
             return redirect('main')
     else:
         form = CreateVideo_Form()
@@ -33,16 +34,18 @@ def upload_video(request):
 
 
 def video_detail(request, pk):
-    
     video = get_object_or_404(VideoItem, pk=pk)
     user = request.user
 
-    
     if user.is_authenticated:
         View.objects.get_or_create(user=user, video=video)
 
+    
+    list_video = VideoItem.objects.all().order_by('-created_at')
+
     return render(request, "videohost/video_detail.html", {
-        "video": video
+        "video": video,
+        "list_video": list_video
     })
 
 
@@ -101,12 +104,23 @@ def api_comments(request, pk):
     })
 
 
-@api_view(["GET"])
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def api_views(request, pk):
     
     video = get_object_or_404(VideoItem, pk=pk)
-    count = video.views.count()
-    return Response({"views": count})
+
+    
+    percent = request.data.get("watched_percent")
+    if percent is None:
+        return Response({"error": "percent required"}, status=400)
+
+    
+    if float(percent) >= 35:
+        View.objects.get_or_create(user=request.user, video=video)
+
+    
+    return Response({"views": video.views.count()})
 
 
 
