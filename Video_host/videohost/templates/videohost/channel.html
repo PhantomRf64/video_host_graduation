@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3>Канал: {{ channel_user.username }}</h3>
+<hr>
+
+<div class="row">
+{% for video in videos %}
+    <div class="col-md-4 col-sm-6">
+        <div class="card video-card h-100 bg-dark text-white shadow-sm">
+            <a href="{% url 'video_detail' video.id %}" class="stretched-link text-decoration-none">
+                {% if video.preview %}
+                <img src="{{ video.preview.url }}" class="card-img-top preview-img" alt="{{ video.title }}">
+                {% else %}
+                <div class="preview-img d-flex align-items-center justify-content-center bg-secondary text-white">
+                    Нет превью
+                </div>
+                {% endif %}
+            </a>
+            <div class="card-body">
+                <h5 class="card-title text-white">{{ video.title|truncatechars:50 }}</h5>
+                <p class="mb-1 text-light">Автор: {{ video.author.username }}</p>
+                <p class="mb-1 text-light">Просмотры: {{ video.views_count }}</p>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <p>У пользователя пока нет видео.</p>
+{% endfor %}
+</div>
+{% endblock %}

@@ -33,7 +33,8 @@ urlpatterns = [
     path('video/<int:pk>/', views.video_detail, name='video_detail'), 
     path('api_reaction/<int:pk>/', views.api_reaction, name='api_reaction'),
     path('api_comments/<int:pk>/', views.api_comments, name='api_comments'),
-    path('api_views/<int:pk>/',views.api_views,name="api_views")
+    path('api_views/<int:pk>/',views.api_views,name="api_views"),
+    path("channel/<str:username>/", views.user_channel, name="user_channel"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

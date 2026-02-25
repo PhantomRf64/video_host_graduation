@@ -1,18 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import VideoItem, Like, Dislike, View, Comment
-from .forms import CreateVideo_Form
-from rest_framework.decorators import api_view,permission_classes
-from rest_framework.response import Response
-from .serializers import SubmetInfoSerializer
-from rest_framework.permissions import IsAuthenticated
-from django.db.models import Count
-from django.db.models import Prefetch
 
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import VideoItem
-from .forms import CreateVideo_Form  
-from django.contrib.auth.decorators import login_required
+from .models import VideoItem, Like, Dislike, View, Comment
+from Registration.models import MyUser
+from .forms import CreateVideo_Form
+from .serializers import SubmetInfoSerializer
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
+from django.db.models import Count, Prefetch
 
 def main_page(request):
     videos = (
@@ -148,6 +146,24 @@ def api_views(request, pk):
     
     return Response({"views": video.views.count()})
 
+
+def user_channel(request, username):
+    user = get_object_or_404(MyUser, username=username)
+
+    videos = (
+        VideoItem.objects
+        .filter(author=user)
+        .annotate(
+            views_count=Count("views"),
+            likes_count=Count("likes"),
+        )
+        .order_by("-created_at")
+    )
+
+    return render(request, "videohost/channel.html", {
+        "channel_user": user,
+        "videos": videos
+    })
 
 
 
