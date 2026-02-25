@@ -22,16 +22,16 @@
                     Загружено: {{ video.created_at|date:"d M Y" }}
                 </p>
                 <p class="mb-1 text-light">
-                    Просмотры: <strong id="views_count">{{ video.views.count }}</strong>
+                    Просмотры: <strong id="views_count">{{ video.views_count }}</strong>
                 </p>
 
                 
                 <div class="d-flex align-items-center mt-2">
                     <button id="likeBtn" class="btn btn-like me-2" {% if not user.is_authenticated %}disabled{% endif %}>
-                        👍 <span id="likes" class="like-count">{{ video.likes.count }}</span>
+                        👍 <span id="likes" class="like-count">{{ video.likes_count }}</span>
                     </button>
                     <button id="dislikeBtn" class="btn btn-dislike" {% if not user.is_authenticated %}disabled{% endif %}>
-                        👎 <span id="dislikes" class="dislike-count">{{ video.dislikes.count }}</span>
+                        👎 <span id="dislikes" class="dislike-count">{{ video.dislikes_count }}</span>
                     </button>
                 </div>
             </div>

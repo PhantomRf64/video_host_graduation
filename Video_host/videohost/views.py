@@ -6,7 +6,8 @@ from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from .serializers import SubmetInfoSerializer
 from rest_framework.permissions import IsAuthenticated
-
+from django.db.models import Count
+from django.db.models import Prefetch
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import VideoItem
@@ -14,7 +15,15 @@ from .forms import CreateVideo_Form
 from django.contrib.auth.decorators import login_required
 
 def main_page(request):
-    videos = VideoItem.objects.all().order_by('-created_at')
+    videos = (
+        VideoItem.objects
+        .select_related("author")
+        .annotate(
+            views_count=Count("views")
+        )
+        .order_by("-created_at")
+    )
+        
     return render(request, "videohost/index.html", {"list_video": videos})
 
 @login_required
@@ -34,14 +43,23 @@ def upload_video(request):
 
 
 def video_detail(request, pk):
-    video = get_object_or_404(VideoItem, pk=pk)
-    user = request.user
+    video = (
+        VideoItem.objects
+        .select_related("author")
+        .prefetch_related("comments__author")
+        .annotate(
+            likes_count=Count("likes"),
+            dislikes_count=Count("dislikes"),
+            views_count=Count("views"),
+        )
+        .get(pk=pk)
+    )
 
-    if user.is_authenticated:
-        View.objects.get_or_create(user=user, video=video)
-
-    
-    list_video = VideoItem.objects.all().order_by('-created_at')
+    list_video = (
+        VideoItem.objects
+        .annotate(views_count=Count("views"))
+        .order_by("-created_at")
+    )
 
     return render(request, "videohost/video_detail.html", {
         "video": video,
@@ -77,7 +95,15 @@ def api_reaction(request, pk):
     else:
         return Response({"status": False, "error": "Invalid action"}, status=400)
     
-    video.refresh_from_db()
+    video = (
+        VideoItem.objects
+        .annotate(
+            count_likes=Count("likes"),
+            count_dislikes=Count("dislikes"),
+            count_views=Count("views"),
+        )
+        .get(pk=pk)
+    )
 
     serializer = SubmetInfoSerializer(video, context={"request": request})
     return Response(serializer.data)

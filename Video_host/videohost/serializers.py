@@ -27,3 +27,7 @@ class SubmetInfoSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             return False
         return user in obj.likes.all()
+    
+
+
+ 
