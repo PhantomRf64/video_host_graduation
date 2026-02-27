@@ -1,0 +1,43 @@
+body {
+    background-color: #1c2331; /* тёмно-синий с туманным оттенком */
+    color: #f0f0f0;
+}
+
+.video-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.5);
+}
+
+.preview-img {
+    height: 180px;
+    object-fit: cover;
+}
+
+.card-body h5 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.card-body p {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+    color: #ddd;
+}
+
+.stretched-link::after {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    content: "";
+}

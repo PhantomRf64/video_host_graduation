@@ -1,0 +1,82 @@
+/* Основные стили карточки */
+.upload-card {
+    background: rgba(20, 30, 50, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.7);
+    color: #e0e0e0;
+}
+.upload-card .card-header {
+    background: rgba(10,20,40,0.9);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Неоновые input и textarea */
+.custom-input,
+.custom-textarea {
+    width: 100%;
+    background-color: rgba(25,35,55,0.9);
+    color: #e0e0e0;
+    border: 1px solid rgba(0,255,255,0.2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.custom-input { height: 38px; }
+.custom-textarea { resize: none; }
+
+.custom-input:focus,
+.custom-textarea:focus {
+    border-color: #00ffff;
+    box-shadow: 0 0 8px #00ffff;
+    outline: none;
+}
+
+/* Кнопки выбора файлов */
+.btn-outline-info {
+    font-weight: bold;
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+.btn-outline-info:hover {
+    box-shadow: 0 0 8px #00ffff;
+    transform: scale(1.05);
+    border-color: #00ffff;
+}
+
+/* Кнопки загрузки и отмены */
+.btn-success {
+    background-color: #00cc88;
+    border-color: #00cc88;
+    font-weight: bold;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-success:hover {
+    background-color: #00ffcc;
+    border-color: #00ffcc;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #00ffcc;
+}
+
+.btn-outline-secondary {
+    border-color: #607080;
+    color: #cfd8e3;
+}
+.btn-outline-secondary:hover {
+    background-color: #607080;
+    color: #fff;
+}
+
+/* Эффект нажатия */
+.animate-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 8px #00ffcc inset;
+}
+
+/* Текст выбранного файла */
+#videoFileName, #previewFileName {
+    font-size: 0.85rem;
+    color: #cfd8e3;
+}

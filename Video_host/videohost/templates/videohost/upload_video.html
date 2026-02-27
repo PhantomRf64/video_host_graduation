@@ -1,102 +1,66 @@
 {% extends "base.html" %}
-
+{% load static  %}
 {% block title %}Загрузить видео{% endblock %}
-
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'videohost/css/upload.css' %}">
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/upload.js' %}"></script>
+{% endblock %}
 {% block content %}
 <div class="row justify-content-center mt-4">
     <div class="col-md-8">
         <div class="card shadow-lg upload-card">
-            <div class="card-header bg-dark text-light">
+            <div class="card-header">
                 <h4 class="mb-0">Загрузить новое видео</h4>
             </div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    {{ form.as_p }}
 
-                    <button type="submit" class="btn btn-success me-2 animate-btn">
-                        Загрузить
-                    </button>
-                    <a href="{% url 'main' %}" class="btn btn-secondary">
-                        Отмена
-                    </a>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Название видео</label>
+                        {{ form.title }}
+                    </div>
+
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Описание видео</label>
+                        {{ form.description }}
+                    </div>
+
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Видео файл</label>
+                        {{ form.video }}
+                        <label for="videoInput" class="btn btn-outline-info animate-btn">
+                            Выбрать видео
+                        </label>
+                        <span id="videoFileName" class="ms-2 text-muted"></span>
+                    </div>
+
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Превью</label>
+                        {{ form.preview }}
+                        <label for="previewInput" class="btn btn-outline-info animate-btn">
+                            Выбрать превью
+                        </label>
+                        <span id="previewFileName" class="ms-2 text-muted"></span>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-success animate-btn">Загрузить</button>
+                        <a href="{% url 'main' %}" class="btn btn-outline-secondary animate-btn">Отмена</a>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-
-.upload-card {
-    background: rgba(20, 30, 50, 0.95);
-    border-radius: 12px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
-    color: #e0e0e0;
-}
 
 
-.upload-card .card-header {
-    background: rgba(10, 20, 40, 0.9);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
 
-
-.upload-card form p {
-    color: #f0f0f0;
-}
-
-.upload-card input,
-.upload-card select,
-.upload-card textarea {
-    background-color: rgba(30, 40, 60, 0.85);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    padding: 8px;
-}
-
-.upload-card input:focus,
-.upload-card select:focus,
-.upload-card textarea:focus {
-    border-color: #00ffff;
-    box-shadow: 0 0 5px #00ffff;
-    outline: none;
-}
-
-
-.btn-success {
-    background-color: #00cc88;
-    border-color: #00cc88;
-    font-weight: bold;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn-success:hover {
-    background-color: #00ffcc;
-    border-color: #00ffcc;
-    transform: scale(1.05);
-    box-shadow: 0 0 15px #00ffcc;
-}
-
-.btn-secondary {
-    background-color: #555a70;
-    border-color: #555a70;
-    color: #e0e0e0;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn-secondary:hover {
-    background-color: #707a90;
-    border-color: #707a90;
-    transform: scale(1.03);
-    box-shadow: 0 0 10px #707a90;
-}
-
-
-.animate-btn:active {
-    transform: scale(0.95);
-    box-shadow: 0 0 8px #00ffcc inset;
-}
-</style>
 {% endblock %}

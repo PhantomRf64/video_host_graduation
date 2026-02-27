@@ -5,26 +5,22 @@ class CreateVideo_Form(forms.ModelForm):
     class Meta:
         model = VideoItem
         fields = ['title', 'description', 'video', 'preview']
-
-       
         widgets = {
             'title': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Название видео', 
-                'style': 'background-color: #1a273b; color: #e0e0e0; border: 1px solid #607080;'
+                'class': 'custom-input',
+                'placeholder': 'Введите название видео'
             }),
             'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': 'Описание видео',
-                'rows': 5,
-                'style': 'background-color: #1a273b; color: #e0e0e0; border: 1px solid #607080;'
+                'class': 'custom-textarea',
+                'rows': 3,
+                'placeholder': 'Краткое описание...'
             }),
             'video': forms.ClearableFileInput(attrs={
-                'class': 'form-control',
-                'style': 'background-color: #1a273b; color: #e0e0e0;'
+                'class': 'd-none',
+                'id': 'videoInput'
             }),
             'preview': forms.ClearableFileInput(attrs={
-                'class': 'form-control',
-                'style': 'background-color: #1a273b; color: #e0e0e0;'
+                'class': 'd-none',
+                'id': 'previewInput'
             }),
         }
