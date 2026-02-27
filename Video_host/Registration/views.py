@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
-from .forms import Registration_Form, Login_Form  # формы должны быть корректны
+from .forms import Registration_Form, Login_Form  
 from django.conf import settings
-
+from videohost.models import View
 
 def welcome(request):
     if request.user.is_authenticated:
@@ -12,20 +12,26 @@ def welcome(request):
 
 
 
+
+
 def register(request):
     if request.user.is_authenticated:
-        print (12)
         return redirect("main")
 
     if request.method == "POST":
         form = Registration_Form(request.POST, request.FILES)
         if form.is_valid():
             user = form.save(commit=False)
-            user.set_password(form.cleaned_data["password1"]) 
+            user.set_password(form.cleaned_data["password1"])
             user.save()
+
+            
+            session_key = request.session.session_key
+            if session_key:
+                View.objects.filter(session=session_key, user=None).update(user=user, session=None)
+
             login(request, user)
             messages.success(request, f"Добро пожаловать, {user.username}!")
-            print (1)
             return redirect("main")
         else:
             messages.error(request, "Ошибка регистрации. Проверьте данные.")

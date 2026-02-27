@@ -1,81 +1,30 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.conf import settings
 
-
-
-
-
-
 class VideoItem(models.Model):
-    title = models.CharField(
-        max_length=255,
-        verbose_name="Название видео"
-    )
-    description = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name="Описание видео"
-    )
-    video = models.FileField(
-        upload_to='videos/',
-        verbose_name="Видео файл"
-    )
-    preview = models.ImageField(
-        upload_to='images/',
-        blank=True,
-        null=True,
-        verbose_name="Превью"
-    )
-    author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='videos',
-        verbose_name="Автор видео"
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Дата загрузки"
-    )
+    title = models.CharField(max_length=255, verbose_name="Название видео")
+    description = models.TextField(blank=True, null=True, verbose_name="Описание видео")
+    video = models.FileField(upload_to='videos/', verbose_name="Видео файл")
+    preview = models.ImageField(upload_to='images/', blank=True, null=True, verbose_name="Превью")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='videos', verbose_name="Автор видео")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата загрузки")
 
     def __str__(self):
         return self.title
 
-
-
 class Like(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        verbose_name="Пользователь"
-    )
-    video = models.ForeignKey(
-        VideoItem,
-        on_delete=models.CASCADE,
-        related_name='likes',
-        verbose_name="Видео"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь")
+    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, related_name='likes', verbose_name="Видео")
 
     class Meta:
-        unique_together = ('user', 'video')  
+        unique_together = ('user', 'video')
 
     def __str__(self):
         return f"{self.user.username} лайкнул {self.video.title}"
 
-
-
 class Dislike(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        verbose_name="Пользователь"
-    )
-    video = models.ForeignKey(
-        VideoItem,
-        on_delete=models.CASCADE,
-        related_name='dislikes',
-        verbose_name="Видео"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь")
+    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, related_name='dislikes', verbose_name="Видео")
 
     class Meta:
         unique_together = ('user', 'video')
@@ -83,53 +32,26 @@ class Dislike(models.Model):
     def __str__(self):
         return f"{self.user.username} не лайкнул {self.video.title}"
 
-
-
 class View(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        verbose_name="Пользователь"
-    )
-    video = models.ForeignKey(
-        VideoItem,
-        on_delete=models.CASCADE,
-        related_name='views',
-        verbose_name="Видео"
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Дата просмотра"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Пользователь")
+    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, related_name='views', verbose_name="Видео")
+    session = models.CharField(max_length=40, null=True, blank=True, verbose_name="Сессия анонимного пользователя")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата просмотра")
 
     class Meta:
-        unique_together = ('user', 'video')  
+        constraints = [
+            models.UniqueConstraint(fields=['video', 'user'], condition=models.Q(user__isnull=False), name='unique_view_user'),
+            models.UniqueConstraint(fields=['video', 'session'], condition=models.Q(user__isnull=True), name='unique_view_session'),
+        ]
 
     def __str__(self):
-        return f"{self.user.username} посмотрел {self.video.title}"
-
-
+        return f"{self.user or self.session} посмотрел {self.video.title}"
 
 class Comment(models.Model):
-    author = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name="Автор комментария"
-    )
-    video = models.ForeignKey(
-        VideoItem,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name="Видео"
-    )
-    text = models.TextField(
-        verbose_name="Текст комментария"
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Дата создания"
-    )
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments', verbose_name="Автор комментария")
+    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, related_name='comments', verbose_name="Видео")
+    text = models.TextField(verbose_name="Текст комментария")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
 
     def __str__(self):
         return f"{self.author.username} к {self.video.title}"

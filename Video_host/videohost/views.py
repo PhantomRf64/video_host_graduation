@@ -41,70 +41,70 @@ def upload_video(request):
 
 
 def video_detail(request, pk):
-    video = (
-        VideoItem.objects
-        .select_related("author")
-        .prefetch_related("comments__author")
-        .annotate(
-            likes_count=Count("likes"),
-            dislikes_count=Count("dislikes"),
-            views_count=Count("views"),
-        )
-        .get(pk=pk)
+    # Берём видео без аннотаций, чтобы избежать join-удвоений
+    video = get_object_or_404(
+        VideoItem.objects.select_related("author").prefetch_related("comments__author"),
+        pk=pk
     )
 
-    list_video = (
-        VideoItem.objects
-        .annotate(views_count=Count("views"))
-        .order_by("-created_at")
-    )
+    # Считаем отдельно на объекте
+    video.likes_count = video.likes.count()
+    video.dislikes_count = video.dislikes.count()
+    video.views_count = video.views.count()
+
+    # Список видео для боковой панели
+    list_video = VideoItem.objects.annotate(
+        views_count=Count("views", distinct=True)  # distinct, чтобы не было дублирования
+    ).order_by("-created_at")
+
+    # Определяем реакцию текущего пользователя
+    user_reaction = None
+    if request.user.is_authenticated:
+        if video.likes.filter(user=request.user).exists():
+            user_reaction = "like"
+        elif video.dislikes.filter(user=request.user).exists():
+            user_reaction = "dislike"
 
     return render(request, "videohost/video_detail.html", {
         "video": video,
-        "list_video": list_video
+        "list_video": list_video,
+        "user_reaction": user_reaction
     })
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def api_reaction(request, pk):
-    
-    
     video = get_object_or_404(VideoItem, pk=pk)
     user = request.user
     action = request.data.get("action")
 
-    if action == "like":
-        
-        Dislike.objects.filter(user=user, video=video).delete()
-        
-        like, created = Like.objects.get_or_create(user=user, video=video)
-        if not created:
-            like.delete()
-
-    elif action == "dislike":
-        
-        
-        Like.objects.filter(user=user, video=video).delete()
-        
-        dislike, created = Dislike.objects.get_or_create(user=user, video=video)
-        if not created:
-            dislike.delete()
-    else:
+    if action not in ["like", "dislike"]:
         return Response({"status": False, "error": "Invalid action"}, status=400)
-    
-    video = (
-        VideoItem.objects
-        .annotate(
-            count_likes=Count("likes"),
-            count_dislikes=Count("dislikes"),
-            count_views=Count("views"),
-        )
-        .get(pk=pk)
-    )
 
-    serializer = SubmetInfoSerializer(video, context={"request": request})
-    return Response(serializer.data)
+    
+    from django.db import transaction
+    with transaction.atomic():
+        if action == "like":
+            Dislike.objects.filter(user=user, video=video).delete()
+            like, created = Like.objects.get_or_create(user=user, video=video)
+            if not created:
+                like.delete()
+        else:
+            Like.objects.filter(user=user, video=video).delete()
+            dislike, created = Dislike.objects.get_or_create(user=user, video=video)
+            if not created:
+                dislike.delete()
+
+    count_likes = Like.objects.filter(video=video).count()
+    count_dislikes = Dislike.objects.filter(video=video).count()
+    count_views = View.objects.filter(video=video).count()
+
+    return Response({
+        "count_likes": count_likes,
+        "count_dislikes": count_dislikes,
+        "count_views": count_views
+    })
 
 
 @api_view(["POST"])
@@ -129,22 +129,27 @@ def api_comments(request, pk):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
 def api_views(request, pk):
-    
     video = get_object_or_404(VideoItem, pk=pk)
-
-    
     percent = request.data.get("watched_percent")
-    if percent is None:
-        return Response({"error": "percent required"}, status=400)
 
-    
-    if float(percent) >= 35:
-        View.objects.get_or_create(user=request.user, video=video)
+    if percent is None or float(percent) < 35:
+        views_count = View.objects.filter(video=video).count()
+        return Response({"views": views_count})
 
-    
-    return Response({"views": video.views.count()})
+    if request.user.is_authenticated:
+       
+        View.objects.get_or_create(video=video, user=request.user, session=None)
+    else:
+        
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+        View.objects.get_or_create(video=video, user=None, session=session_key)
+
+    views_count = View.objects.filter(video=video).count()
+    return Response({"views": views_count})
 
 
 def user_channel(request, username):

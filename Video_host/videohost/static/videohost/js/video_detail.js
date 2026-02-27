@@ -3,43 +3,52 @@ const likeBtn = document.getElementById("likeBtn");
 const dislikeBtn = document.getElementById("dislikeBtn");
 const commentForm = document.getElementById("comment_form");
 
-
-
-
 let viewSent = false;
+let likeProcessing = false;
+let dislikeProcessing = false;
 
-video_view.addEventListener("timeupdate", function() {
-    if (!video_view.duration || video_view.paused) return;
+// ------------------------
+// Отправка просмотров
+// ------------------------
+if (video_view) {
+    video_view.addEventListener("timeupdate", function () {
+        if (!video_view.duration || video_view.paused) return;
 
-    const percent = (video_view.currentTime / video_view.duration) * 100;
+        const percent = (video_view.currentTime / video_view.duration) * 100;
 
-    if (percent >= 35 && !viewSent) {
-        viewSent = true;
+        if (percent >= 35 && !viewSent) {
+            viewSent = true;
 
-        fetch(viewsUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken":  csrfToken 
-            },
-            body: JSON.stringify({ watched_percent: percent })
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log("view counted", data);
-            document.getElementById("views_count").innerText = data.views;
-        });
-    }
-});
+            fetch(viewsUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                },
+                body: JSON.stringify({ watched_percent: percent })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("views_count").innerText = data.views;
+            });
+        }
+    });
+}
 
-
+// ------------------------
+// Лайк
+// ------------------------
 if (likeBtn) {
-    likeBtn.addEventListener("click", function() {
+    likeBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (likeProcessing) return;  // блокируем повтор
+        likeProcessing = true;
+
         fetch(reactionUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-CSRFToken":  csrfToken 
+                "X-CSRFToken": csrfToken
             },
             body: JSON.stringify({ action: "like" })
         })
@@ -47,17 +56,26 @@ if (likeBtn) {
         .then(data => {
             document.getElementById("likes").innerText = data.count_likes;
             document.getElementById("dislikes").innerText = data.count_dislikes;
-        });
+            document.getElementById("views_count").innerText = data.count_views;
+        })
+        .finally(() => likeProcessing = false);
     });
 }
 
+// ------------------------
+// Дизлайк
+// ------------------------
 if (dislikeBtn) {
-    dislikeBtn.addEventListener("click", function() {
+    dislikeBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (dislikeProcessing) return;
+        dislikeProcessing = true;
+
         fetch(reactionUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-CSRFToken":  csrfToken 
+                "X-CSRFToken": csrfToken
             },
             body: JSON.stringify({ action: "dislike" })
         })
@@ -65,21 +83,26 @@ if (dislikeBtn) {
         .then(data => {
             document.getElementById("likes").innerText = data.count_likes;
             document.getElementById("dislikes").innerText = data.count_dislikes;
-        });
+            document.getElementById("views_count").innerText = data.count_views;
+        })
+        .finally(() => dislikeProcessing = false);
     });
 }
 
-
+// ------------------------
+// Комментарии
+// ------------------------
 if (commentForm) {
-    commentForm.addEventListener("submit", function(e) {
+    commentForm.addEventListener("submit", function (e) {
         e.preventDefault();
-        const text = document.getElementById("comment_text").value;
+        const text = document.getElementById("comment_text").value.trim();
+        if (!text) return;
 
         fetch(commentsUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "X-CSRFToken":  csrfToken 
+                "X-CSRFToken": csrfToken
             },
             body: JSON.stringify({ text: text })
         })
