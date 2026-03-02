@@ -1,0 +1,15 @@
+<div class="video-card">
+    <a href="{% url 'video_detail' video.id %}">
+        <div class="video-preview">
+            <img src="{{ video.preview.url|default:'/static/images/default_preview.png' }}" alt="{{ video.title }}">
+        </div>
+        <div class="video-info">
+            <div class="video-title">{{ video.title|truncatechars:30 }}</div>
+            <div class="video-author">{{ video.author.username }}</div>
+            <div class="video-views">{{ video.views_count }} просмотров</div>
+            {% if video.category %}
+            <div class="video-category">{{ video.category.name }}</div>
+            {% endif %}
+        </div>
+    </a>
+</div>

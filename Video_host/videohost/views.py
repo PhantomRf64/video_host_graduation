@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
-from .models import VideoItem, Like, Dislike, View, Comment
+from .models import VideoItem, Like, Dislike, View, Comment,Category
 from Registration.models import MyUser
 from .forms import CreateVideo_Form
 from .serializers import SubmetInfoSerializer
@@ -15,15 +15,10 @@ from django.db.models import Count, Prefetch , Q
 def main_page(request):
     query = request.GET.get("q")   
 
-    videos = (
-        VideoItem.objects
-        .select_related("author")
-        .annotate(
-            views_count=Count("views")
-        )
+    videos = VideoItem.objects.select_related("author").annotate(
+        views_count=Count("views")
     )
 
-    
     if query:
         videos = videos.filter(
             Q(title__icontains=query) |
@@ -32,9 +27,23 @@ def main_page(request):
 
     videos = videos.order_by("-created_at")
 
+    
+    popular_videos = videos.order_by("-views_count")[:20]
+    new_videos = videos.order_by("-created_at")[:20]
+
+    
+    games_category = Category.objects.filter(name__iexact="Игры").first()
+    similar_category = Category.objects.filter(name__iexact="Похожие").first()
+
+    games_videos = videos.filter(category=games_category)[:20] if games_category else []
+    similar_videos = videos.filter(category=similar_category)[:20] if similar_category else []
+
     return render(request, "videohost/index.html", {
-        "list_video": videos,
-        "query": query
+        "query": query,
+        "popular_videos": popular_videos,
+        "new_videos": new_videos,
+        "games_videos": games_videos,
+        "similar_videos": similar_videos,
     })
 
 @login_required

@@ -3,32 +3,52 @@
 {% block title %}Главная {% endblock %} 
 {% block head_extra %}
 <link rel="stylesheet" href="{% static 'videohost/css/index.css' %}">
+<link rel="stylesheet" href="{% static 'videohost/css/video_detail.css' %}">
 {% endblock  %}
 {% block content %}
+  {% if query %}
+    <h5 class="text-light mb-3">Результаты поиска: "{{ query }}"</h5>
+  {% endif %}
 
-<div class="row g-4">
-    {% for video in list_video %}
-    <div class="col-md-4 col-sm-6">
-        <div class="card video-card h-100 bg-dark text-white shadow-sm">
-            <a href="{% url 'video_detail' video.id %}" class="stretched-link text-decoration-none">
-                {% if video.preview %}
-                <img src="{{ video.preview.url }}" class="card-img-top preview-img" alt="{{ video.title }}">
-                {% else %}
-                <div class="preview-img d-flex align-items-center justify-content-center bg-secondary text-white">
-                    Нет превью
-                </div>
-                {% endif %}
-            </a>
-            <div class="card-body">
-                <h5 class="card-title text-white">{{ video.title|truncatechars:50 }}</h5>
-                <p class="mb-1 text-light">Автор: {{ video.author.username }}</p>
-                <p class="mb-1 text-light">Просмотры: {{ video.views_count }}</p>
-            </div>
-        </div>
+  
+
+<div class="carousel-container">
+    <div class="carousel-title">Популярные видео</div>
+    <div class="carousel-wrapper">
+        {% for video in popular_videos %}
+            {% include "videohost/includes/video_card.html" with video=video %}
+        {% endfor %}
     </div>
-    {% empty %}
-    <p class="text-center text-muted">Пока нет видео.</p>
-    {% endfor %}
 </div>
- 
+
+
+<div class="carousel-container">
+    <div class="carousel-title">Новые видео</div>
+    <div class="carousel-wrapper">
+        {% for video in new_videos %}
+            {% include "videohost/includes/video_card.html" with video=video %}
+        {% endfor %}
+    </div>
+</div>
+
+
+<div class="carousel-container">
+    <div class="carousel-title">Игры</div>
+    <div class="carousel-wrapper">
+        {% for video in games_videos %}
+            {% include "videohost/includes/video_card.html" with video=video %}
+        {% endfor %}
+    </div>
+</div>
+
+
+<div class="carousel-container">
+    <div class="carousel-title">Похожие видео</div>
+    <div class="carousel-wrapper">
+        {% for video in similar_videos %}
+            {% include "videohost/includes/video_card.html" with video=video %}
+        {% endfor %}
+    </div>
+</div>
+
 {% endblock %}
