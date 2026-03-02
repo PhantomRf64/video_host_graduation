@@ -1,6 +1,14 @@
 from django.db import models
 from django.conf import settings
 
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Название категории")
+    slug = models.SlugField(max_length=100, unique=True, verbose_name="URL")
+
+    def __str__(self):
+        return self.name
 class VideoItem(models.Model):
     title = models.CharField(max_length=255, verbose_name="Название видео")
     description = models.TextField(blank=True, null=True, verbose_name="Описание видео")
@@ -8,6 +16,7 @@ class VideoItem(models.Model):
     preview = models.ImageField(upload_to='images/', blank=True, null=True, verbose_name="Превью")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='videos', verbose_name="Автор видео")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата загрузки")
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="videos", verbose_name="Категория")
 
     def __str__(self):
         return self.title

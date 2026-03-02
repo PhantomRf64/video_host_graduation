@@ -1,4 +1,4 @@
-/* Основные стили карточки */
+
 .upload-card {
     background: rgba(20, 30, 50, 0.95);
     border-radius: 12px;
@@ -10,7 +10,7 @@
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-/* Неоновые input и textarea */
+
 .custom-input,
 .custom-textarea {
     width: 100%;
@@ -33,7 +33,7 @@
     outline: none;
 }
 
-/* Кнопки выбора файлов */
+
 .btn-outline-info {
     font-weight: bold;
     padding: 4px 10px;
@@ -46,7 +46,7 @@
     border-color: #00ffff;
 }
 
-/* Кнопки загрузки и отмены */
+
 .btn-success {
     background-color: #00cc88;
     border-color: #00cc88;
@@ -69,13 +69,13 @@
     color: #fff;
 }
 
-/* Эффект нажатия */
+
 .animate-btn:active {
     transform: scale(0.95);
     box-shadow: 0 0 8px #00ffcc inset;
 }
 
-/* Текст выбранного файла */
+
 #videoFileName, #previewFileName {
     font-size: 0.85rem;
     color: #cfd8e3;

@@ -7,9 +7,7 @@ let viewSent = false;
 let likeProcessing = false;
 let dislikeProcessing = false;
 
-// ------------------------
-// Отправка просмотров
-// ------------------------
+
 if (video_view) {
     video_view.addEventListener("timeupdate", function () {
         if (!video_view.duration || video_view.paused) return;
@@ -35,13 +33,11 @@ if (video_view) {
     });
 }
 
-// ------------------------
-// Лайк
-// ------------------------
+
 if (likeBtn) {
     likeBtn.addEventListener("click", function (e) {
         e.preventDefault();
-        if (likeProcessing) return;  // блокируем повтор
+        if (likeProcessing) return;  
         likeProcessing = true;
 
         fetch(reactionUrl, {
@@ -89,9 +85,7 @@ if (dislikeBtn) {
     });
 }
 
-// ------------------------
-// Комментарии
-// ------------------------
+
 if (commentForm) {
     commentForm.addEventListener("submit", function (e) {
         e.preventDefault();

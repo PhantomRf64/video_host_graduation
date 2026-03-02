@@ -10,19 +10,32 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch , Q
 
 def main_page(request):
+    query = request.GET.get("q")   
+
     videos = (
         VideoItem.objects
         .select_related("author")
         .annotate(
             views_count=Count("views")
         )
-        .order_by("-created_at")
     )
-        
-    return render(request, "videohost/index.html", {"list_video": videos})
+
+    
+    if query:
+        videos = videos.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query)
+        )
+
+    videos = videos.order_by("-created_at")
+
+    return render(request, "videohost/index.html", {
+        "list_video": videos,
+        "query": query
+    })
 
 @login_required
 def upload_video(request):
@@ -41,23 +54,23 @@ def upload_video(request):
 
 
 def video_detail(request, pk):
-    # Берём видео без аннотаций, чтобы избежать join-удвоений
+   
     video = get_object_or_404(
         VideoItem.objects.select_related("author").prefetch_related("comments__author"),
         pk=pk
     )
 
-    # Считаем отдельно на объекте
+    
     video.likes_count = video.likes.count()
     video.dislikes_count = video.dislikes.count()
     video.views_count = video.views.count()
 
-    # Список видео для боковой панели
+    
     list_video = VideoItem.objects.annotate(
-        views_count=Count("views", distinct=True)  # distinct, чтобы не было дублирования
+        views_count=Count("views", distinct=True)  
     ).order_by("-created_at")
 
-    # Определяем реакцию текущего пользователя
+    
     user_reaction = None
     if request.user.is_authenticated:
         if video.likes.filter(user=request.user).exists():
