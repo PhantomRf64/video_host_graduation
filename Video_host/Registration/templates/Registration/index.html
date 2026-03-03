@@ -4,6 +4,17 @@
 {% block title %} Register {% endblock title %}
 
 {% block content %}
-<h1> Добро пожаловать на видео.РУ </h1>
+<h1 class="welcome-title">Добро пожаловать на <span class="highlight">ВидеоХост.РУ</span> 🎬</h1>
+<p class="welcome-text">Здесь вы найдете лучшие видео, подписывайтесь на любимых авторов и делитесь контентом!</p>
 
+
+<h3 class="text-center text-light mt-5">Популярные видео</h3>
+<div class="carousel-container">
+    <div class="carousel-title">{{ category.name }}</div>
+    <div class="carousel-wrapper">
+        {% for video in category.videos %}
+            {% include "videohost/includes/video_card.html" with video=video %}
+        {% endfor %}
+    </div>
+</div>
 {% endblock content %}

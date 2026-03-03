@@ -58,9 +58,7 @@ if (likeBtn) {
     });
 }
 
-// ------------------------
-// Дизлайк
-// ------------------------
+
 if (dislikeBtn) {
     dislikeBtn.addEventListener("click", function (e) {
         e.preventDefault();

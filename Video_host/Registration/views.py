@@ -4,11 +4,20 @@ from django.contrib import messages
 from .forms import Registration_Form, Login_Form  
 from django.conf import settings
 from videohost.models import View
+from videohost.models import VideoItem, Category
 
 def welcome(request):
     if request.user.is_authenticated:
         return redirect("wellcome") 
-    return render(request, "Registration/index.html")
+    categories = Category.objects.prefetch_related('videos').all()
+
+    
+    popular_videos = VideoItem.objects.order_by('-view')[:5]
+
+    return render(request, "registration/index.html", {
+        'category_videos': categories,   
+        'popular_videos': popular_videos,
+    })
 
 
 

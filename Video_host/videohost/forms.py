@@ -4,7 +4,7 @@ from .models import VideoItem
 class CreateVideo_Form(forms.ModelForm):
     class Meta:
         model = VideoItem
-        fields = ['title', 'description', 'video', 'preview']
+        fields = ['title', 'description', 'video', 'preview','category']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'custom-input',
@@ -22,5 +22,8 @@ class CreateVideo_Form(forms.ModelForm):
             'preview': forms.ClearableFileInput(attrs={
                 'class': 'd-none',
                 'id': 'previewInput'
+            }),
+            'category': forms.Select(attrs={
+                'class': 'custom-input'   
             }),
         }

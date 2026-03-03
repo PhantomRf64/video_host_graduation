@@ -2,28 +2,50 @@ from django.db import models
 from django.conf import settings
 
 
-
 class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название категории")
-    slug = models.SlugField(max_length=100, unique=True, verbose_name="URL")
+    name = models.CharField(max_length=100)
+    position = models.PositiveIntegerField(default=0, help_text="Порядок отображения категорий")
+
+    class Meta:
+        ordering = ['position']
 
     def __str__(self):
         return self.name
+
+
 class VideoItem(models.Model):
-    title = models.CharField(max_length=255, verbose_name="Название видео")
-    description = models.TextField(blank=True, null=True, verbose_name="Описание видео")
-    video = models.FileField(upload_to='videos/', verbose_name="Видео файл")
-    preview = models.ImageField(upload_to='images/', blank=True, null=True, verbose_name="Превью")
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='videos', verbose_name="Автор видео")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата загрузки")
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name="videos", verbose_name="Категория")
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    video = models.FileField(upload_to='videos/')
+    preview = models.ImageField(upload_to='previews/', blank=True, null=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='videos')
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved = models.BooleanField(default=False, verbose_name="Одобрено модератором")
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return self.title
 
+   
+    @property
+    def likes_count(self):
+        return self.like_set.count()
+
+    @property
+    def dislikes_count(self):
+        return self.dislike_set.count()
+
+    @property
+    def views_count(self):
+        return self.view_set.count()
+
+
 class Like(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь")
-    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, related_name='likes', verbose_name="Видео")
+    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, verbose_name="Видео")
 
     class Meta:
         unique_together = ('user', 'video')
@@ -31,9 +53,10 @@ class Like(models.Model):
     def __str__(self):
         return f"{self.user.username} лайкнул {self.video.title}"
 
+
 class Dislike(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Пользователь")
-    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, related_name='dislikes', verbose_name="Видео")
+    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, verbose_name="Видео")
 
     class Meta:
         unique_together = ('user', 'video')
@@ -41,9 +64,10 @@ class Dislike(models.Model):
     def __str__(self):
         return f"{self.user.username} не лайкнул {self.video.title}"
 
+
 class View(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, verbose_name="Пользователь")
-    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, related_name='views', verbose_name="Видео")
+    video = models.ForeignKey(VideoItem, on_delete=models.CASCADE, verbose_name="Видео")
     session = models.CharField(max_length=40, null=True, blank=True, verbose_name="Сессия анонимного пользователя")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата просмотра")
 
@@ -55,6 +79,7 @@ class View(models.Model):
 
     def __str__(self):
         return f"{self.user or self.session} посмотрел {self.video.title}"
+
 
 class Comment(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comments', verbose_name="Автор комментария")

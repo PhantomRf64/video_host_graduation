@@ -1,40 +1,31 @@
-"""
-URL configuration for Video_host project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path,include
-from django.conf import settings 
-from django.conf.urls.static import static
-from django.http import HttpResponse
-
-from . import views
-
-
-
 from django.urls import path
-from . import views
+from django.conf import settings
+from django.conf.urls.static import static
+from videohost import views as videohost_views
 
 urlpatterns = [
-    path('', views.main_page, name='main'),  
-    path('upload/', views.upload_video, name='upload_video'),  
-    path('video/<int:pk>/', views.video_detail, name='video_detail'), 
-    path('api_reaction/<int:pk>/', views.api_reaction, name='api_reaction'),
-    path('api_comments/<int:pk>/', views.api_comments, name='api_comments'),
-    path('api_views/<int:pk>/',views.api_views,name="api_views"),
-    path("channel/<str:username>/", views.user_channel, name="user_channel"),
+    # Админка
+    path('admin/', admin.site.urls),
+
+    # Главная страница
+    path('', videohost_views.main_page, name='main'),
+
+    # Загрузка видео
+    path('upload/', videohost_views.upload_video, name='upload_video'),
+
+    # Детали видео
+    path('video/<int:video_id>/', videohost_views.video_detail, name='video_detail'),
+
+    # AJAX API
+    path('api/video/<int:video_id>/reaction/', videohost_views.api_reaction, name='api_reaction'),
+    path('api/video/<int:video_id>/views/', videohost_views.api_views, name='api_views'),
+    path('api/video/<int:video_id>/comments/', videohost_views.api_comments, name='api_comments'),
+
+    # Канал пользователя
+    path('channel/<str:username>/', videohost_views.user_channel, name='user_channel'),
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Подключение медиа файлов в DEBUG режиме
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

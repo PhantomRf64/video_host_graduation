@@ -1,210 +1,124 @@
-from django.shortcuts import render, redirect, get_object_or_404
+
+import json
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-
-from .models import VideoItem, Like, Dislike, View, Comment,Category
-from Registration.models import MyUser
-from .forms import CreateVideo_Form
-from .serializers import SubmetInfoSerializer
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-
-from django.db.models import Count, Prefetch , Q
+from django.views.decorators.csrf import csrf_exempt
+from .models import VideoItem, Like, Dislike, View, Comment, Category
+from django.db.models import Count
 
 def main_page(request):
-    query = request.GET.get("q")   
-
-    videos = VideoItem.objects.select_related("author").annotate(
-        views_count=Count("views")
-    )
-
-    if query:
-        videos = videos.filter(
-            Q(title__icontains=query) |
-            Q(description__icontains=query)
-        )
-
-    videos = videos.order_by("-created_at")
+    
+    popular_videos = VideoItem.objects.filter(approved=True) \
+        .annotate(views_count_db=Count('view')) \
+        .order_by('-views_count_db')[:10]
 
     
-    popular_videos = videos.order_by("-views_count")[:20]
-    new_videos = videos.order_by("-created_at")[:20]
+    new_videos = VideoItem.objects.filter(approved=True).order_by('-created_at')[:10]
 
     
-    games_category = Category.objects.filter(name__iexact="Игры").first()
-    similar_category = Category.objects.filter(name__iexact="Похожие").first()
+    categories = Category.objects.all().order_by('position')
+    category_videos = []
+    for cat in categories:
+        videos = cat.videos.filter(approved=True).order_by('-created_at')[:10]
+        category_videos.append({
+            'name': cat.name,
+            'videos': videos
+        })
 
-    games_videos = videos.filter(category=games_category)[:20] if games_category else []
-    similar_videos = videos.filter(category=similar_category)[:20] if similar_category else []
-
-    return render(request, "videohost/index.html", {
-        "query": query,
-        "popular_videos": popular_videos,
-        "new_videos": new_videos,
-        "games_videos": games_videos,
-        "similar_videos": similar_videos,
-    })
-
-@login_required
-def upload_video(request):
-    if request.method == "POST":
-        form = CreateVideo_Form(request.POST, request.FILES)
-        if form.is_valid():
-            video = form.save(commit=False)
-            video.author = request.user  
-            video.save()
-
-            return redirect('main')
-    else:
-        form = CreateVideo_Form()
-
-    return render(request, "videohost/upload_video.html", {"form": form})
+    context = {
+        'popular_videos': popular_videos,
+        'new_videos': new_videos,
+        'category_videos': category_videos,
+    }
+    return render(request, 'videohost/index.html', context)
 
 
-def video_detail(request, pk):
-   
-    video = get_object_or_404(
-        VideoItem.objects.select_related("author").prefetch_related("comments__author"),
-        pk=pk
-    )
-
-    
-    video.likes_count = video.likes.count()
-    video.dislikes_count = video.dislikes.count()
-    video.views_count = video.views.count()
-
-    
-    list_video = VideoItem.objects.annotate(
-        views_count=Count("views", distinct=True)  
-    ).order_by("-created_at")
+def video_detail(request, video_id):
+    video = get_object_or_404(VideoItem, id=video_id)
 
     
     user_reaction = None
     if request.user.is_authenticated:
-        if video.likes.filter(user=request.user).exists():
-            user_reaction = "like"
-        elif video.dislikes.filter(user=request.user).exists():
-            user_reaction = "dislike"
-
-    return render(request, "videohost/video_detail.html", {
-        "video": video,
-        "list_video": list_video,
-        "user_reaction": user_reaction
-    })
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def api_reaction(request, pk):
-    video = get_object_or_404(VideoItem, pk=pk)
-    user = request.user
-    action = request.data.get("action")
-
-    if action not in ["like", "dislike"]:
-        return Response({"status": False, "error": "Invalid action"}, status=400)
+        if Like.objects.filter(user=request.user, video=video).exists():
+            user_reaction = 'like'
+        elif Dislike.objects.filter(user=request.user, video=video).exists():
+            user_reaction = 'dislike'
 
     
-    from django.db import transaction
-    with transaction.atomic():
-        if action == "like":
-            Dislike.objects.filter(user=user, video=video).delete()
-            like, created = Like.objects.get_or_create(user=user, video=video)
-            if not created:
-                like.delete()
-        else:
-            Like.objects.filter(user=user, video=video).delete()
-            dislike, created = Dislike.objects.get_or_create(user=user, video=video)
-            if not created:
-                dislike.delete()
+    list_video = VideoItem.objects.exclude(id=video.id).filter(approved=True).order_by('-created_at')
 
-    count_likes = Like.objects.filter(video=video).count()
-    count_dislikes = Dislike.objects.filter(video=video).count()
-    count_views = View.objects.filter(video=video).count()
+    context = {
+        'video': video,
+        'user_reaction': user_reaction,
+        'list_video': list_video,
+    }
+    return render(request, 'videohost/video_detail.html', context)
 
-    return Response({
-        "count_likes": count_likes,
-        "count_dislikes": count_dislikes,
-        "count_views": count_views
+
+@login_required
+@csrf_exempt
+def api_reaction(request, video_id):
+    video = get_object_or_404(VideoItem, id=video_id)
+    data = json.loads(request.body)
+    action = data.get("action")
+
+    if action == "like":
+        Like.objects.get_or_create(user=request.user, video=video)
+        Dislike.objects.filter(user=request.user, video=video).delete()
+    elif action == "dislike":
+        Dislike.objects.get_or_create(user=request.user, video=video)
+        Like.objects.filter(user=request.user, video=video).delete()
+
+    return JsonResponse({
+        "count_likes": video.like_set.count(),
+        "count_dislikes": video.dislike_set.count(),
+        "count_views": video.view_set.count(),
     })
 
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def api_comments(request, pk):
-    
-    video = get_object_or_404(VideoItem, pk=pk)
-    text = request.data.get("text")
-    
-
-    if not text:
-        return Response({"status": False, "error": "Empty comment"}, status=400)
-
-    comment = Comment.objects.create(author=request.user, video=video, text=text)
-
-    return Response({
-        "status": True,
-        "author": comment.author.username,
-        "text": comment.text,
-        "created_at": comment.created_at.strftime("%d %b %Y %H:%M")
-    })
-
-
-@api_view(["POST"])
-def api_views(request, pk):
-    video = get_object_or_404(VideoItem, pk=pk)
-    percent = request.data.get("watched_percent")
-
-    if percent is None or float(percent) < 35:
-        views_count = View.objects.filter(video=video).count()
-        return Response({"views": views_count})
+@csrf_exempt
+def api_views(request, video_id):
+    video = get_object_or_404(VideoItem, id=video_id)
+    session = request.session.session_key or request.session.create()
 
     if request.user.is_authenticated:
-       
-        View.objects.get_or_create(video=video, user=request.user, session=None)
+        View.objects.get_or_create(user=request.user, video=video)
     else:
-        
-        session_key = request.session.session_key
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
-        View.objects.get_or_create(video=video, user=None, session=session_key)
+        View.objects.get_or_create(session=session, video=video)
 
-    views_count = View.objects.filter(video=video).count()
-    return Response({"views": views_count})
+    return JsonResponse({"views": video.view_set.count()})
+
+
+@login_required
+@csrf_exempt
+def api_comments(request, video_id):
+    video = get_object_or_404(VideoItem, id=video_id)
+    data = json.loads(request.body)
+    text = data.get("text")
+    if text:
+        comment = Comment.objects.create(author=request.user, video=video, text=text)
+        return JsonResponse({"author": comment.author.username, "text": comment.text})
+    return JsonResponse({"error": "Нет текста"}, status=400)
+
+
+@login_required
+def upload_video(request):
+    from .forms import CreateVideo_Form  
+    if request.method == 'POST':
+        form = CreateVideo_Form(request.POST, request.FILES)
+        if form.is_valid():
+            video = form.save(commit=False)
+            video.author = request.user
+            video.save()
+            return redirect('video_detail', video_id=video.id)
+    else:
+        form = CreateVideo_Form()
+    return render(request, 'videohost/upload_video.html', {'form': form})
 
 
 def user_channel(request, username):
-    user = get_object_or_404(MyUser, username=username)
-
-    videos = (
-        VideoItem.objects
-        .filter(author=user)
-        .annotate(
-            views_count=Count("views"),
-            likes_count=Count("likes"),
-        )
-        .order_by("-created_at")
-    )
-
-    return render(request, "videohost/channel.html", {
-        "channel_user": user,
-        "videos": videos
-    })
-
-
-
-
-
-
-
-
-
-                           
-
-
-
-
-
-
-
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    user = get_object_or_404(User, username=username)
+    videos = VideoItem.objects.filter(author=user, approved=True).order_by('-created_at')
+    return render(request, 'videohost/user_channel.html', {'channel_user': user, 'videos': videos})

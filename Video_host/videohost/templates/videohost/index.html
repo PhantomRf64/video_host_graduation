@@ -12,43 +12,15 @@
 
   
 
+{% for category in category_videos %}
 <div class="carousel-container">
-    <div class="carousel-title">Популярные видео</div>
+    <div class="carousel-title">{{ category.name }}</div>
     <div class="carousel-wrapper">
-        {% for video in popular_videos %}
+        {% for video in category.videos %}
             {% include "videohost/includes/video_card.html" with video=video %}
         {% endfor %}
     </div>
 </div>
-
-
-<div class="carousel-container">
-    <div class="carousel-title">Новые видео</div>
-    <div class="carousel-wrapper">
-        {% for video in new_videos %}
-            {% include "videohost/includes/video_card.html" with video=video %}
-        {% endfor %}
-    </div>
-</div>
-
-
-<div class="carousel-container">
-    <div class="carousel-title">Игры</div>
-    <div class="carousel-wrapper">
-        {% for video in games_videos %}
-            {% include "videohost/includes/video_card.html" with video=video %}
-        {% endfor %}
-    </div>
-</div>
-
-
-<div class="carousel-container">
-    <div class="carousel-title">Похожие видео</div>
-    <div class="carousel-wrapper">
-        {% for video in similar_videos %}
-            {% include "videohost/includes/video_card.html" with video=video %}
-        {% endfor %}
-    </div>
-</div>
+{% endfor %}
 
 {% endblock %}
