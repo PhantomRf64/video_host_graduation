@@ -5,25 +5,28 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from .models import VideoItem, Like, Dislike, View, Comment, Category
-from django.db.models import Count
+from django.db.models import Count,Q
 
 def main_page(request):
-    
-    popular_videos = VideoItem.objects.filter(approved=True) \
-        .annotate(views_count_db=Count('view')) \
-        .order_by('-views_count_db')[:10]
+    query = request.GET.get('q')
+    if query:
+        videos = VideoItem.objects.filter(title__icontains=query, approved=True)
+    else:
+        videos = VideoItem.objects.filter(approved=True)
 
-    
-    new_videos = VideoItem.objects.filter(approved=True).order_by('-created_at')[:10]
+    popular_videos = videos.annotate(views_count_db=Count('view')).order_by('-views_count_db')[:10]
+    new_videos = videos.order_by('-created_at')[:10]
 
-    
     categories = Category.objects.all().order_by('position')
     category_videos = []
     for cat in categories:
-        videos = cat.videos.filter(approved=True).order_by('-created_at')[:10]
+        cat_videos = cat.videos.filter(approved=True)
+        if query:
+            cat_videos = cat_videos.filter(title__icontains=query)
+        cat_videos = cat_videos.order_by('-created_at')[:10]
         category_videos.append({
             'name': cat.name,
-            'videos': videos
+            'videos': cat_videos
         })
 
     context = {

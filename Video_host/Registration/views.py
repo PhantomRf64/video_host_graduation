@@ -51,23 +51,22 @@ def register(request):
 
 
 
+
+
 def sign_in(request):
     if request.user.is_authenticated:
-        return redirect("main")
+        return redirect("main")  
 
     if request.method == "POST":
-        form = Login_Form(request.POST)
+        form = Login_Form(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data["username"]
-            password = form.cleaned_data["password"]
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f"Вы вошли как {user.username}")
-                next_url = request.GET.get("next")
-                return redirect(next_url if next_url else "main")
-            else:
-                messages.error(request, "Неверный логин или пароль")
+            user = form.get_user()  
+            login(request, user)
+            messages.success(request, f"Вы вошли как {user.username}")
+            next_url = request.GET.get("next")
+            return redirect(next_url if next_url else "main")
+        else:
+            messages.error(request, "Неверный логин или пароль")
     else:
         form = Login_Form()
 
