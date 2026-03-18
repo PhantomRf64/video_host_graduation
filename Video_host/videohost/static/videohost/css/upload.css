@@ -80,3 +80,37 @@
     font-size: 0.85rem;
     color: #cfd8e3;
 }
+
+.tags-input-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px;
+    min-height: 40px;
+    cursor: text;
+}
+
+.tags-input-wrapper input {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #e0e0e0;
+    flex: 1;
+    min-width: 120px;
+}
+
+.tag-chip {
+    background: #2f3f5f;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.tag-chip span {
+    cursor: pointer;
+    font-weight: bold;
+}

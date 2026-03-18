@@ -2,9 +2,16 @@ from django import forms
 from .models import VideoItem
 
 class CreateVideo_Form(forms.ModelForm):
+    tags = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'custom-input',
+            'placeholder': 'Например: music, chill, gaming'
+        })
+    )
     class Meta:
         model = VideoItem
-        fields = ['title', 'description', 'video', 'preview','category']
+        fields = ['title', 'description', 'video', 'preview','category','tags']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'custom-input',
@@ -15,6 +22,7 @@ class CreateVideo_Form(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Краткое описание...'
             }),
+            
             'video': forms.ClearableFileInput(attrs={
                 'class': 'd-none',
                 'id': 'videoInput'

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils.text import slugify
 
 
 class Category(models.Model):
@@ -12,9 +13,26 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class Tag(models.Model):
+    name = models.CharField(max_length=20,unique=True,db_index=True)
+    slug = models.SlugField(max_length=20,unique=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name) or "tag"
+            slug = base_slug
+            counter = 1
+            while Tag.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 class VideoItem(models.Model):
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200,db_index=True)
     description = models.TextField(blank=True)
     video = models.FileField(upload_to='videos/')
     preview = models.ImageField(upload_to='previews/', blank=True, null=True)
@@ -22,7 +40,7 @@ class VideoItem(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='videos')
     created_at = models.DateTimeField(auto_now_add=True)
     approved = models.BooleanField(default=False, verbose_name="Одобрено модератором")
-
+    tags = models.ManyToManyField(Tag,blank=True)
     class Meta:
         ordering = ['-created_at']
 

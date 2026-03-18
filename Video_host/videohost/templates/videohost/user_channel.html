@@ -4,28 +4,82 @@
 <h3>Канал: {{ channel_user.username }}</h3>
 <hr>
 
+
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'my_channel' %}active{% endif %}" href="?tab=my_channel">Мой канал</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'history' %}active{% endif %}" href="?tab=history">История видео</a>
+    </li>
+    {% if user.is_moderator %}
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'moderation' %}active{% endif %}" href="?tab=moderation">Модерация</a>
+    </li>
+    {% endif %}
+</ul>
+
 <div class="row">
 {% for video in videos %}
-    <div class="col-md-4 col-sm-6">
-        <div class="card video-card h-100 bg-dark text-white shadow-sm">
-            <a href="{% url 'video_detail' video.id %}" class="stretched-link text-decoration-none">
+    <div class="col-md-4 col-sm-6 mb-3">
+        <div class="card video-card h-100 bg-dark text-white shadow-sm position-relative">
+
+            
+            <a href="{% url 'video_detail' video.id %}" class="text-decoration-none d-block">
                 {% if video.preview %}
-                <img src="{{ video.preview.url }}" class="card-img-top preview-img" alt="{{ video.title }}">
+                    <img src="{{ video.preview.url }}" class="card-img-top preview-img" alt="{{ video.title }}">
                 {% else %}
-                <div class="preview-img d-flex align-items-center justify-content-center bg-secondary text-white">
-                    Нет превью
-                </div>
+                    <div class="preview-img d-flex align-items-center justify-content-center bg-secondary text-white">
+                        Нет превью
+                    </div>
                 {% endif %}
             </a>
+
+            
+            <div class="video-actions position-absolute top-0 end-0 m-2 d-flex flex-column">
+
+                
+                {% if user.is_moderator and not video.approved %}
+                    <form method="post" action="{% url 'approve_video' video.id %}" class="mb-1">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-success stop-prop">✅ Одобрить</button>
+                    </form>
+                    <form method="post" action="{% url 'reject_video' video.id %}" class="mb-1">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger stop-prop">❌ Отклонить</button>
+                    </form>
+                {% endif %}
+
+                
+                {% if user == video.author %}
+                    <a href="{% url 'edit_video' video.id %}" class="btn btn-sm btn-primary mb-1 stop-prop">✏️ Редактировать</a>
+                    <form method="post" action="{% url 'delete_video' video.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger stop-prop">🗑️ Удалить</button>
+                    </form>
+                {% endif %}
+            </div>
+
+            
             <div class="card-body">
                 <h5 class="card-title text-white">{{ video.title|truncatechars:50 }}</h5>
                 <p class="mb-1 text-light">Автор: {{ video.author.username }}</p>
                 <p class="mb-1 text-light">Просмотры: {{ video.views_count }}</p>
             </div>
+
         </div>
     </div>
 {% empty %}
-    <p>У пользователя пока нет видео.</p>
+    <p>Нет видео для отображения.</p>
 {% endfor %}
 </div>
+
+<script>
+    // Остановка всплытия событий при клике на кнопки действий
+    document.querySelectorAll('.stop-prop').forEach(btn => {
+        btn.addEventListener('click', function(e){
+            e.stopPropagation(); // предотвращает переход по карточке
+        });
+    });
+</script>
 {% endblock %}

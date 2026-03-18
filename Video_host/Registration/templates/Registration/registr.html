@@ -71,6 +71,9 @@
             {% else %}
                 <span>Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></span>
             {% endif %}
+            <div class="mt-2">
+                <a href="{% url 'password_reset' %}" style="color:#00ffff;">Забыли пароль?</a>
+            </div>
         </div>
     </div>
 </div>

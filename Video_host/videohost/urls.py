@@ -23,7 +23,13 @@ urlpatterns = [
     path('api/video/<int:video_id>/comments/', videohost_views.api_comments, name='api_comments'),
 
     
-    path('channel/<str:username>/', videohost_views.user_channel, name='user_channel'),
+    path('channel/<str:username>/',videohost_views.user_channel, name='user_channel'),
+    path('video/<int:video_id>/edit/',videohost_views.edit_video, name='edit_video'),
+    path('video/<int:video_id>/delete/',videohost_views.delete_video, name='delete_video'),
+
+    path('video/<int:video_id>/approve/', videohost_views.approve_video, name='approve_video'),
+    path('video/<int:video_id>/reject/', videohost_views.reject_video, name='reject_video'),
+    # path('support/', videohost_views.support_message, name='support_message'),
 ]
 
 

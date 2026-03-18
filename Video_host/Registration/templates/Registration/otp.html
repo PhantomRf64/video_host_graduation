@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение входа</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #121c2a, #1e2b3d);
+            color: #e0e0e0;
+        }
+        .card {
+            background-color: #1f2a3a;
+            color: #ffffff;
+            border: none;
+        }
+        .form-control {
+            background-color: #2b3a4f;
+            border: none;
+            color: white;
+            text-align: center;
+            font-size: 20px;
+            letter-spacing: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container vh-100 d-flex justify-content-center align-items-center">
+    <div class="card shadow-lg p-4" style="width: 400px;">
+        <h3 class="text-center mb-3">🔐 Подтверждение входа</h3>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-danger">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <p class="text-center text-light">
+            Введите 6-значный код
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.otp }}
+            <button type="submit" class="btn btn-success w-100 mt-3">
+                Подтвердить
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <small style="color:#00ffff;">
+                Код действует 5 минут
+            </small>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

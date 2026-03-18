@@ -6,13 +6,14 @@ from . import models
 class Registration_Form(UserCreationForm):
     class Meta:
         model = models.MyUser
-        fields = ("username", "password1", "password2")
+        fields = ("username","email", "password1", "password2")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
       
         self.fields["username"].label = "Имя пользователя"
+        self.fields["email"].label = "Email"
         self.fields["password1"].label = "Пароль"
         self.fields["password2"].label = "Повторите пароль"
 
@@ -23,6 +24,10 @@ class Registration_Form(UserCreationForm):
        
         self.fields["username"].widget.attrs.update({
             "placeholder": "Введите имя пользователя",
+            "class": "form-control"
+        })
+        self.fields["email"].widget.attrs.update({
+            "placeholder": "Введите email",
             "class": "form-control"
         })
         self.fields["password1"].widget.attrs.update({
@@ -52,3 +57,10 @@ class Login_Form(AuthenticationForm):
         
         self.fields["username"].label = "Имя пользователя"
         self.fields["password"].label = "Пароль"
+
+class OTPForm(forms.Form):
+    otp = forms.CharField(
+        max_length=6,
+        label="Код подтверждения",
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Введите код из SMS или почты"})
+    )

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import VideoItem, Category, Like, Dislike, View, Comment
+from .models import VideoItem, Category, Like, Dislike, View, Comment,Tag
 
 @admin.register(VideoItem)
 class VideoItemAdmin(admin.ModelAdmin):
@@ -8,6 +8,7 @@ class VideoItemAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description', 'author__username')
     readonly_fields = ('likes_count', 'dislikes_count', 'views_count')
     actions = ['approve_videos']
+    filter_horizontal = ("tags",)
 
     def approve_videos(self, request, queryset):
         updated = queryset.update(approved=True)

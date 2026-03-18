@@ -29,6 +29,19 @@
                     </div>
 
                     <div class="mb-3">
+                    <label class="form-label">Теги</label>
+
+                        <div class="tags-input-wrapper custom-input" id="tagsWrapper">
+                            <input type="text" id="tagsInput" placeholder="Введите тег и нажмите Enter">
+                        </div>
+
+                     
+                        <input type="hidden" name="tags" id="tagsHidden">
+
+                        <small class="text-muted">Нажми Enter или запятую</small>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label">Категория</label>
                          {{ form.category }}
                     </div>

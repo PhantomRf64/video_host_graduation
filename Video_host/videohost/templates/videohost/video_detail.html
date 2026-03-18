@@ -20,7 +20,9 @@
 {% block content %}
 <div class="container mt-4">
     <div class="row">
+        <!-- Левый блок: видео, теги, комментарии -->
         <div class="col-lg-8">
+            <!-- Видео -->
             <div class="ratio ratio-16x9 mb-3 shadow-lg rounded video-wrapper">
                 <video id="video_player" controls class="w-100 rounded" data-video-id="{{ video.id }}">
                     <source src="{{ video.video.url }}" type="video/mp4">
@@ -28,16 +30,36 @@
                 </video>
             </div>
 
+            <!-- Информация о видео -->
             <div class="p-4 rounded mb-3 video-info shadow-sm">
                 <h4 class="mb-2 text-light">{{ video.title }}</h4>
                 <p class="mb-1 text-light">
                     Автор: <strong>{{ video.author.username }}</strong> | 
                     Загружено: {{ video.created_at|date:"d M Y" }}
                 </p>
+
+                <!-- Теги -->
+                <div class="mt-2">
+                    {% for tag in video.tags.all|slice:":5" %}
+                        <span class="tag-chip">#{{ tag.name }}</span>
+                    {% endfor %}
+
+                    {% if video.tags.count > 5 %}
+                        <span id="showMoreTags" style="cursor:pointer; color:#00ffff;">... ещё</span>
+                    {% endif %}
+
+                    <div id="hiddenTags" style="display:none;">
+                        {% for tag in video.tags.all|slice:"5:" %}
+                            <span class="tag-chip">#{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
                 <p class="mb-1 text-light">
                     Просмотры: <strong id="views_count">{{ video.views_count }}</strong>
                 </p>
 
+                <!-- Лайки / Дизлайки -->
                 <div class="d-flex align-items-center mt-2">
                     <button id="likeBtn" class="btn btn-like me-2 {% if user_reaction == 'like' %}active{% endif %}" {% if not user.is_authenticated %}disabled{% endif %}>
                         👍 <span id="likes" class="like-count">{{ video.likes_count }}</span>
@@ -48,6 +70,18 @@
                 </div>
             </div>
 
+            <!-- Добавление тегов автором -->
+            {% if request.user == video.author %}
+            <div class="mt-3 p-3 rounded video-info shadow-sm">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="text" name="tags" class="custom-input" placeholder="Добавить теги (через запятую)">
+                    <button type="submit" class="btn btn-success mt-2">Добавить</button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Комментарии -->
             <div class="comments p-3 rounded video-info shadow-sm">
                 <h5 class="mb-3 text-light">Комментарии</h5>
                 <div id="comments" class="mb-3">
@@ -66,29 +100,17 @@
             </div>
         </div>
 
+        <!-- Правый блок: Sidebar -->
         <div class="col-lg-4">
-            <h6 class="mb-3 text-light">Похожие видео</h6>
-            {% for vid in list_video|slice:":5" %}
-                {% if vid.id != video.id %}
-                <a href="{% url 'video_detail' vid.id %}" class="text-decoration-none">
-                    <div class="d-flex mb-3 sidebar-video p-2 rounded">
-                        {% if vid.preview %}
-                        <img src="{{ vid.preview.url }}" class="me-2 rounded" style="width:120px; height:70px; object-fit:cover;">
-                        {% else %}
-                        <div class="me-2 rounded" style="width:120px; height:70px; background-color:#2a3a50;"></div>
-                        {% endif %}
-                        <div>
-                            <h6 class="mb-0 text-light">{{ vid.title|truncatechars:40 }}</h6>
-                            <p class="mb-0" style="font-size:0.8rem; color: #00ffff;">
-                                {{ vid.views_count }} просмотров
-                            </p>
-                        </div>
-                    </div>
-                </a>
-                {% endif %}
-            {% empty %}
-                <p class="text-light">Похожие видео пока отсутствуют.</p>
-            {% endfor %}
+            {% if history_videos %}
+                {% include 'videohost/includes/sidebar_videos.html' with videos=history_videos title="История просмотров" current_video=video %}
+            {% endif %}
+
+            {% if recommendations_video %}
+                {% include 'videohost/includes/sidebar_videos.html' with videos=recommendations_video title="Рекомендованные видео" current_video=video %}
+            {% else %}
+                {% include 'videohost/includes/sidebar_videos.html' with videos=popular_videos title="Популярные видео" current_video=video %}
+            {% endif %}
         </div>
     </div>
 </div>

@@ -5,6 +5,8 @@ from .forms import Registration_Form, Login_Form
 from django.conf import settings
 from videohost.models import View
 from videohost.models import VideoItem, Category
+from .models import MyUser
+from .forms import OTPForm
 
 def welcome(request):
     if request.user.is_authenticated:
@@ -60,11 +62,13 @@ def sign_in(request):
     if request.method == "POST":
         form = Login_Form(request, data=request.POST)
         if form.is_valid():
-            user = form.get_user()  
-            login(request, user)
-            messages.success(request, f"Вы вошли как {user.username}")
-            next_url = request.GET.get("next")
-            return redirect(next_url if next_url else "main")
+            user = form.get_user()
+
+            
+            request.session["pre_2fa_user"] = user.id
+
+            
+            return redirect("two_factor_auth")
         else:
             messages.error(request, "Неверный логин или пароль")
     else:
@@ -78,3 +82,37 @@ def sign_out(request):
     logout(request)
     messages.success(request, "Вы вышли из системы")
     return redirect('wellcome')
+
+def two_factor_auth(request):
+    if not request.session.get("pre_2fa_user"):
+        return redirect("login")
+
+    user_id = request.session["pre_2fa_user"]
+    user = MyUser.objects.get(id=user_id)
+
+    if request.method == "POST":
+        form = OTPForm(request.POST)
+        if form.is_valid():
+            otp = form.cleaned_data["otp"]
+            if user.verify_otp(otp):
+                user.otp_code = None
+                user.otp_created_at = None
+                user.save()
+
+   
+                login(request, user)
+                del request.session["pre_2fa_user"]
+                return redirect("main")
+            else:
+                messages.error(request, "Неверный или просроченный код")
+    else:
+        form = OTPForm()
+
+        
+        if not user.otp_created_at or \
+           timezone.now() > user.otp_created_at + timedelta(minutes=5):
+
+            otp = user.generate_otp()
+            print(f"OTP для теста: {otp}")
+
+    return render(request, "registration/otp.html", {"form": form})

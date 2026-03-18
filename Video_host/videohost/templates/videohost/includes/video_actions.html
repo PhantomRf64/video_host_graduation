@@ -1,0 +1,23 @@
+
+
+{% if active_tab == 'my_channel' %}
+    {% if user == video.author or user.is_moderator %}
+    <div class="video-actions position-absolute top-0 end-0 m-2 d-flex flex-column">
+        <a href="{% url 'edit_video' video.id %}" class="btn btn-sm btn-primary mb-1 stop-prop">✏️</a>
+        <a href="{% url 'delete_video' video.id %}" class="btn btn-sm btn-danger stop-prop">🗑️</a>
+    </div>
+    {% endif %}
+{% elif active_tab == 'moderation' %}
+    {% if user.is_moderator and not video.approved %}
+    <div class="video-actions position-absolute top-0 end-0 m-2 d-flex flex-column">
+        <form method="post" action="{% url 'approve_video' video.id %}" class="mb-1">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success stop-prop">✅ Одобрить</button>
+        </form>
+        <form method="post" action="{% url 'reject_video' video.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger stop-prop">❌ Отклонить</button>
+        </form>
+    </div>
+    {% endif %}
+{% endif %}

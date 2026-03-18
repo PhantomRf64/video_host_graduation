@@ -65,3 +65,12 @@ body {
     transform: scale(0.95);
     box-shadow: 0 0 8px #00ffff inset;
 }
+
+.tag-chip {
+    background: #2f3f5f;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    margin-right: 5px;
+    font-size: 13px;
+}

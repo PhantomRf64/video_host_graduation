@@ -109,3 +109,18 @@ if (commentForm) {
         });
     });
 }
+
+
+const btn = document.getElementById('showMoreTags');
+if (btn) {
+    btn.addEventListener('click', () => {
+        const hidden = document.getElementById('hiddenTags');
+        if (hidden.style.display === 'none') {
+            hidden.style.display = 'inline';
+            btn.textContent = 'свернуть';
+        } else {
+            hidden.style.display = 'none';
+            btn.textContent = '... ещё';
+        }
+    });
+}

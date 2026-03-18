@@ -1,0 +1,24 @@
+<div class="sidebar-videos mb-4">
+    <h6 class="mb-3 text-light">{{ title }}</h6>
+    {% for vid in videos %}
+        {% if vid.id != current_video.id %}
+        <a href="{% url 'video_detail' vid.id %}" class="text-decoration-none">
+            <div class="d-flex mb-3 sidebar-video p-2 rounded shadow-sm">
+                {% if vid.preview %}
+                    <img src="{{ vid.preview.url }}" class="me-2 rounded" style="width:120px; height:70px; object-fit:cover;">
+                {% else %}
+                    <div class="me-2 rounded" style="width:120px; height:70px; background-color:#2a3a50;"></div>
+                {% endif %}
+                <div class="text-truncate">
+                    <h6 class="mb-0 text-light">{{ vid.title|truncatechars:40 }}</h6>
+                    <p class="mb-0" style="font-size:0.8rem; color: #00ffff;">
+                        {{ vid.views_count }} просмотров
+                    </p>
+                </div>
+            </div>
+        </a>
+        {% endif %}
+    {% empty %}
+        <p class="text-light">Видео отсутствуют.</p>
+    {% endfor %}
+</div>
